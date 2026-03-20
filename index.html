@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bulls and Cows</title>
+
+  <!-- ✅ CSS 正確載入 -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <main class="app">
+    <header class="header">
+      <div class="headerTop">
+        <div class="headerLeft">
+          <h1 class="title">Bulls &amp; Cows</h1>
+          <p class="subtitle">規則：4 位數、不重複、第一位可為 0（例如 0123）</p>
+        </div>
+
+        <div class="headerRight">
+          <button id="resetBtn" class="btn ghost btnHeader">新遊戲</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="inputRow" aria-label="輸入區">
+        <div class="underInputs" role="group" aria-label="四位數輸入">
+          <input class="digit" inputmode="numeric" maxlength="1" aria-label="第1位" autocomplete="off">
+          <input class="digit" inputmode="numeric" maxlength="1" aria-label="第2位" autocomplete="off">
+          <input class="digit" inputmode="numeric" maxlength="1" aria-label="第3位" autocomplete="off">
+          <input class="digit" inputmode="numeric" maxlength="1" aria-label="第4位" autocomplete="off">
+        </div>
+
+        <div class="btnRow btnRowMain">
+          <button id="submitBtn" class="btn primary">猜！</button>
+          <button id="clearBtn"  class="btn ghost">清除</button>
+        </div>
+      </div>
+
+      <div class="tips">
+        <span>操作：← → 移動｜Home/End 跳到頭尾｜Enter 送出｜Esc 清除</span>
+        <span>也可直接貼上 4 位數自動分格（例如貼上 0123）</span>
+      </div>
+
+      <p class="msg" id="msg" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <h2 class="h2">歷史紀錄</h2>
+      <ul id="history" class="history"></ul>
+    </section>
+
+
+  </main>
+
+  <!-- ✅ JS 正確載入 -->
+  <script src="game.js"></script>
+</body>
+</html>
+``
