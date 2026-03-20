@@ -337,7 +337,7 @@ function submitGuess(){
   appendHistory(turn, guess, A, B);
 
   if(A === DIGITS){
-    setMsg(`✨​ 太強啦！答案是 ${secret}（共 ${turn} 回合）`, false);
+    setMsg(`✨​ 太強啦 ✨ 答案是 ${secret}（共 ${turn} 回合）`, false);
     inputs.forEach(i => i.disabled = true);
     if(submitBtn) submitBtn.disabled = true;
   }else{
@@ -366,7 +366,7 @@ function resetGame(){
   clearDevPassword();
   refreshDevUI();
 
-  setMsg("已開始新遊戲（首位允許 0）", false);
+  setMsg("New game started", false);
   focusAt(0);
 }
 
