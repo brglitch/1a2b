@@ -315,20 +315,40 @@ body{
 
 
 /* Mobile */
+
+
 @media (max-width: 560px){
   .inputRow{
-    /* 讓手機也維持同一行（左：4格輸入 / 右：按鈕） */
-    grid-template-columns: auto 1fr;
-    column-gap: 16px; /* 原本桌機是 80px，手機縮小避免擠到換行 */
+    grid-template-columns: 1fr;
+    column-gap: 0;
   }
-
-  /* 按鈕區如果太擠，允許換行或縮排更好看（可二選一） */
-  .btnRow{
-    flex-wrap: wrap;
-  }
-
   .btnRowMain{
-    justify-self: end; /* 讓按鈕區靠右（也可改 start 看你喜好） */
+    justify-self: start;
   }
+
+  /* 歷史紀錄：回合編號貼最左、卡片撐滿、A/B 仍貼最右 */
+  .history li{
+    grid-template-columns: 32px 1fr;
+    column-gap: 10px;
+    align-items: center;
+  }
+
+  .turnNo{
+    text-align: left;
+    justify-self: start;
+  }
+
+  .hist-card{
+    max-width: none;
+    width: 100%;
+  }
+
+  /* 如果你想「整個面板」也更貼邊，再打開這段 */
+  /*
+  .panel{
+    padding: 14px 14px;
+  }
+  */
 }
-``
+
+
