@@ -80,13 +80,14 @@ function getGuessFromBoxes(){
   return inputs.map(i => i.value.trim()).join("");
 }
 
+
 function isValidGuess(guess){
-  if(guess.length !== DIGITS) return { ok:false, reason:`請填滿 ${DIGITS} 格` };
-  if(!/^\d{4}$/.test(guess)) return { ok:false, reason:"只能輸入 0-9" };
-  if(!ALLOW_LEADING_ZERO && guess[0] === "0") return { ok:false, reason:"第一位不可為 0" };
-  if(REQUIRE_UNIQUE && new Set(guess).size !== DIGITS) return { ok:false, reason:"數字不可重複" };
+  if (guess.length !== DIGITS) return { ok:false, reason:`請填滿 ${DIGITS} 格` };
+  if (!/^\d{4}$/.test(guess)) return { ok:false, reason:"只能輸入 0-9" };
+  if (REQUIRE_UNIQUE && new Set(guess).size !== DIGITS) return { ok:false, reason:"數字不可重複" };
   return { ok:true };
 }
+
 
 function calculateAandB(secret, guess){
   let A = 0, B = 0;
@@ -326,7 +327,7 @@ function submitGuess(){
   if(guessMap.has(guess)){
     const firstTurn = guessMap.get(guess);
     markDupGuess();
-    setMsg(`⚠️ 已在第 ${firstTurn} 回合猜過 ${guess}，請換一組（不會送出）`, true);
+    setMsg(`⚠️ 已在第 ${firstTurn} 回合猜過 ${guess}`, true);
     return;
   }
 
