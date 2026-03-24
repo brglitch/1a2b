@@ -346,25 +346,28 @@ body{
     font-size: 24px;
   }
 
-  /* 2) 按鈕區：改直排（右側一欄），按鈕縮小 */
-  .btnRowMain{
-    justify-self: end;
-    align-self: end;
-  }
+ 
+/* 2) 按鈕區：手機改成「同一行」(Guess + Clear 並排)，且仍與輸入框同列 */
+.btnRowMain{
+  justify-self: end;
+  align-self: end;
+}
 
-  .btnRow{
-    display: flex;
-    flex-direction: column;   /* 直排：更符合窄螢幕 */
-    gap: 8px;
-    flex-wrap: nowrap;
-  }
+.btnRow{
+  display: flex;
+  flex-direction: row;   /* 關鍵：水平並排 */
+  gap: 8px;
+  flex-wrap: nowrap;     /* 不換行，確保就是同一行 */
+}
 
-  .btn{
-    height: 36px;
-    padding: 0 10px;
-    font-size: 13px;
-    border-radius: 10px;
-  }
+/* 按鈕縮小，避免窄螢幕擠爆 */
+.btn{
+  height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
 
   /* -------------------------------------------------------
      3) 歷史紀錄：更緊密（縮 gap / padding / 字距）
