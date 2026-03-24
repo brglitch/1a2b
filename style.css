@@ -313,14 +313,22 @@ body{
   background:#fff;
 }
 
+
 /* Mobile */
 @media (max-width: 560px){
   .inputRow{
-    grid-template-columns: 1fr;
-    column-gap: 0;
+    /* 讓手機也維持同一行（左：4格輸入 / 右：按鈕） */
+    grid-template-columns: auto 1fr;
+    column-gap: 16px; /* 原本桌機是 80px，手機縮小避免擠到換行 */
   }
+
+  /* 按鈕區如果太擠，允許換行或縮排更好看（可二選一） */
+  .btnRow{
+    flex-wrap: wrap;
+  }
+
   .btnRowMain{
-    justify-self: start;
+    justify-self: end; /* 讓按鈕區靠右（也可改 start 看你喜好） */
   }
 }
 ``
