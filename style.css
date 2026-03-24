@@ -168,12 +168,11 @@ body{
 .history li{
   display:grid;
   grid-template-columns: 40px 1fr;
-  column-gap: 18px;
+  column-gap: 10px;   /* 原 18px，改小讓序號更貼近 BOX */
   align-items:center;
 }
-
 .turnNo{
-  text-align:right;
+  text-align:left;    /* 原 right，改 left 讓序號靠左 */
   color:var(--muted);
   font-weight:800;
   font-size:13px;
