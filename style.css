@@ -411,10 +411,30 @@ body{
     font-size: 12px;
   }
 
-  /* 如果你希望「歷史紀錄」整體再更密，可以加這兩條（先保留註解）
+  /* 如果你希望「歷史紀錄」整體再更密，可以加這兩條（先保留註解） */
   .histSpace{ width: 6px; }
   .histDigit{ min-width: 20px; height: 24px; }
-  */
+
+
+  /* 讓 header 左側可以縮，不要被 min-width 卡住 */
+  .headerLeft{
+    min-width: 0;
+  }
+
+  /* 標題：手機強制一行 + 稍微縮字避免擠爆 */
+  .title{
+    white-space: nowrap;
+    font-size: 18px;
+    letter-spacing: .2px;
+  }
+
+  /* 可選：副標也避免怪異換行（想要一行的話打開） */
+  /* .subtitle{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  } */
+  
 }
 
 
