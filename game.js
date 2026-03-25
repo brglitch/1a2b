@@ -109,20 +109,15 @@ function markDuplicates(){
 
 /* ---- Sync mark helpers ---- */
 /**
- * 同步標記規則（依需求）：
- * 1st click: 灰色（同步）
- * 2nd click: 綠色（不同步、只改這一格）
- * 3rd click: 藍色（不同步、只改這一格）
- * 4th click: 恢復原狀（不同步）
+ * UX 規則（避免綠/藍被同步干擾）：
+ * - 短按 / click：只改「本格」：none -> green -> blue -> none
+ * - 長按 / long-press：切換「同步灰」：global gray on/off（只灰色會同步）
  *
  * globalMarkState 只用來記「灰色同步」：
  * 0 none, 3 gray(sync)
  */
 
-// 取得某 digit 是否處於「灰色同步」狀態
-function stateForDigit(d){
-  return Number(globalMarkState.get(d) || 0); // 只會是 0 或 3
-}
+function stateForDigit(d){ return Number(globalMarkState.get(d) || 0); }
 
 function applyDigitStateClass(el, state){
   el.classList.remove("mBlue", "mGreen", "mGray");
@@ -131,61 +126,59 @@ function applyDigitStateClass(el, state){
   if(state === 3) el.classList.add("mGray");
 }
 
-function applyStateToAllOccurrences(digitChar, state){
+function applyStateToAllOccurrences(digitChar, state, clearLocal = false){
   if(!historyEl) return;
   historyEl
     .querySelectorAll(`.histDigit[data-digit="${digitChar}"]`)
-    .forEach(el => applyDigitStateClass(el, state));
+    .forEach(el => {
+      if(clearLocal) el.dataset.localState = "0";
+      applyDigitStateClass(el, state);
+    });
 }
 
-// 從 element 目前 class 推回它的本地狀態（none/blue/green/gray）
-function getLocalStateFromEl(el){
-  if(el.classList.contains("mGray")) return 3;
-  if(el.classList.contains("mGreen")) return 2;
-  if(el.classList.contains("mBlue")) return 1;
-  return 0;
+/* ---- Local (per-cell) mark: none -> green -> blue -> none ---- */
+function getLocalState(el){
+  return Number(el?.dataset?.localState || 0); // 0 none, 2 green, 1 blue（刻意不含 3）
 }
-
-// 依需求循環：none -> gray(sync) -> green(local) -> blue(local) -> none
+function setLocalState(el, state){
+  el.dataset.localState = String(state);
+  applyDigitStateClass(el, state);
+}
 function nextLocalState(cur){
-  if(cur === 0) return 3;
-  if(cur === 3) return 2;
+  // none(0) -> green(2) -> blue(1) -> none(0)
+  if(cur === 0) return 2;
   if(cur === 2) return 1;
   return 0; // cur === 1
 }
 
-/**
- * 只在「灰色」進出時做同步：
- * - 進入灰色：把該 digit 全部同步成灰色（globalMarkState 記為 3）
- * - 離開灰色：把該 digit 全部同步清掉（globalMarkState 清為 0）
- * - 綠/藍：只改被點到的那一格（不同步）
- */
-function cycleDigitMark(digitEl){
+function cycleLocalMark(digitEl){
   const digitChar = digitEl?.dataset?.digit;
   if(!digitChar) return;
 
-  const cur = getLocalStateFromEl(digitEl);
-  const next = nextLocalState(cur);
-
-  // 情況 A：要進入灰色（同步）
-  if(next === 3){
-    globalMarkState.set(digitChar, 3);
-    applyStateToAllOccurrences(digitChar, 3);
-    return;
-  }
-
-  // 情況 B：從灰色離開（解除同步、全部清掉）
-  if(cur === 3 && next !== 3){
+  // 若此 digit 目前是「同步灰」狀態，使用者短按代表要做本格筆記：
+  // 先把同步灰解除（全部清掉），再套用本格綠/藍
+  if(stateForDigit(digitChar) === 3){
     globalMarkState.set(digitChar, 0);
-    applyStateToAllOccurrences(digitChar, 0);
-    // 接著把「被點到那一格」套上 next（綠/藍/無）
-    applyDigitStateClass(digitEl, next);
-    return;
+    applyStateToAllOccurrences(digitChar, 0, true); // 清灰 + 清 local（避免之後跳回舊狀態）
   }
 
-  // 情況 C：綠/藍/無（不同步、只改這一格）
-  applyDigitStateClass(digitEl, next);
+  const cur = getLocalState(digitEl);
+  const next = nextLocalState(cur);
+  setLocalState(digitEl, next);
 }
+
+/* ---- Global gray (sync) toggle: on/off ---- */
+function toggleGlobalGrayByDigit(digitChar){
+  if(!digitChar) return;
+  const cur = stateForDigit(digitChar);       // 0 or 3
+  const next = (cur === 3) ? 0 : 3;
+
+  globalMarkState.set(digitChar, next);
+
+  // 切換同步灰時，把所有該 digit 的 localState 清掉，避免「解除灰」後突然冒出舊的綠/藍
+  applyStateToAllOccurrences(digitChar, next, true);
+}
+
 
 
 /* ---- History rendering ---- */
@@ -250,21 +243,72 @@ function appendHistory(turnNo, guess, A, B){
   historyEl.appendChild(li);
 }
 
-/* ---- History sync marking events ---- */
-historyEl?.addEventListener("click", (e) => {
+
+
+
+/* ---- History sync marking events ----
+ * - 短按：cycleLocalMark (綠/藍/無)
+ * - 長按：toggleGlobalGrayByDigit (同步灰 開/關)
+ * - 鍵盤：Enter/Space = 短按；Shift+Enter/Space = 長按效果
+ */
+let _pressTimer = null;
+let _longPressed = false;
+const LONG_PRESS_MS = 450;
+
+function clearPressTimer(){
+  if(_pressTimer){
+    clearTimeout(_pressTimer);
+    _pressTimer = null;
+  }
+}
+
+historyEl?.addEventListener("pointerdown", (e) => {
   const digitEl = e.target?.closest?.(".histDigit");
   if(!digitEl) return;
-  cycleDigitMark(digitEl);
+
+  _longPressed = false;
+  clearPressTimer();
+
+  _pressTimer = setTimeout(() => {
+    _longPressed = true;
+    toggleGlobalGrayByDigit(digitEl.dataset.digit);
+  }, LONG_PRESS_MS);
+});
+
+historyEl?.addEventListener("pointerup", (e) => {
+  const digitEl = e.target?.closest?.(".histDigit");
+  clearPressTimer();
+  if(!digitEl) return;
+
+  // 若已觸發長按，就不要再執行短按循環
+  if(_longPressed) return;
+
+  cycleLocalMark(digitEl);
+});
+
+historyEl?.addEventListener("pointerleave", clearPressTimer);
+historyEl?.addEventListener("pointercancel", clearPressTimer);
+
+// 防止手機長按跳出選單（影響體驗）
+historyEl?.addEventListener("contextmenu", (e) => {
+  if(e.target?.closest?.(".histDigit")) e.preventDefault();
 });
 
 historyEl?.addEventListener("keydown", (e) => {
   const target = e.target;
   if(!target?.classList?.contains("histDigit")) return;
+
   if(e.key === "Enter" || e.key === " "){
     e.preventDefault();
-    cycleDigitMark(target);
+    if(e.shiftKey){
+      toggleGlobalGrayByDigit(target.dataset.digit); // Shift + Enter/Space：同步灰
+    }else{
+      cycleLocalMark(target); // Enter/Space：本格綠/藍
+    }
   }
 });
+
+
 
 
 /* ---- Dev unlock ---- */
