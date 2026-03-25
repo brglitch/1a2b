@@ -108,7 +108,21 @@ function markDuplicates(){
 }
 
 /* ---- Sync mark helpers ---- */
-function stateForDigit(d){ return Number(globalMarkState.get(d) || 0); }
+/**
+ * 同步標記規則（依需求）：
+ * 1st click: 灰色（同步）
+ * 2nd click: 綠色（不同步、只改這一格）
+ * 3rd click: 藍色（不同步、只改這一格）
+ * 4th click: 恢復原狀（不同步）
+ *
+ * globalMarkState 只用來記「灰色同步」：
+ * 0 none, 3 gray(sync)
+ */
+
+// 取得某 digit 是否處於「灰色同步」狀態
+function stateForDigit(d){
+  return Number(globalMarkState.get(d) || 0); // 只會是 0 或 3
+}
 
 function applyDigitStateClass(el, state){
   el.classList.remove("mBlue", "mGreen", "mGray");
@@ -119,16 +133,60 @@ function applyDigitStateClass(el, state){
 
 function applyStateToAllOccurrences(digitChar, state){
   if(!historyEl) return;
-  historyEl.querySelectorAll(`.histDigit[data-digit="${digitChar}"]`)
+  historyEl
+    .querySelectorAll(`.histDigit[data-digit="${digitChar}"]`)
     .forEach(el => applyDigitStateClass(el, state));
 }
 
-function cycleGlobalDigit(digitChar){
-  const cur = stateForDigit(digitChar);
-  const next = (cur + 1) % 4; // none->blue->green->gray->none
-  globalMarkState.set(digitChar, next);
-  applyStateToAllOccurrences(digitChar, next);
+// 從 element 目前 class 推回它的本地狀態（none/blue/green/gray）
+function getLocalStateFromEl(el){
+  if(el.classList.contains("mGray")) return 3;
+  if(el.classList.contains("mGreen")) return 2;
+  if(el.classList.contains("mBlue")) return 1;
+  return 0;
 }
+
+// 依需求循環：none -> gray(sync) -> green(local) -> blue(local) -> none
+function nextLocalState(cur){
+  if(cur === 0) return 3;
+  if(cur === 3) return 2;
+  if(cur === 2) return 1;
+  return 0; // cur === 1
+}
+
+/**
+ * 只在「灰色」進出時做同步：
+ * - 進入灰色：把該 digit 全部同步成灰色（globalMarkState 記為 3）
+ * - 離開灰色：把該 digit 全部同步清掉（globalMarkState 清為 0）
+ * - 綠/藍：只改被點到的那一格（不同步）
+ */
+function cycleDigitMark(digitEl){
+  const digitChar = digitEl?.dataset?.digit;
+  if(!digitChar) return;
+
+  const cur = getLocalStateFromEl(digitEl);
+  const next = nextLocalState(cur);
+
+  // 情況 A：要進入灰色（同步）
+  if(next === 3){
+    globalMarkState.set(digitChar, 3);
+    applyStateToAllOccurrences(digitChar, 3);
+    return;
+  }
+
+  // 情況 B：從灰色離開（解除同步、全部清掉）
+  if(cur === 3 && next !== 3){
+    globalMarkState.set(digitChar, 0);
+    applyStateToAllOccurrences(digitChar, 0);
+    // 接著把「被點到那一格」套上 next（綠/藍/無）
+    applyDigitStateClass(digitEl, next);
+    return;
+  }
+
+  // 情況 C：綠/藍/無（不同步、只改這一格）
+  applyDigitStateClass(digitEl, next);
+}
+
 
 /* ---- History rendering ---- */
 function createGuessDigits(guess){
@@ -196,18 +254,18 @@ function appendHistory(turnNo, guess, A, B){
 historyEl?.addEventListener("click", (e) => {
   const digitEl = e.target?.closest?.(".histDigit");
   if(!digitEl) return;
-  const digitChar = digitEl.dataset.digit;
-  if(digitChar) cycleGlobalDigit(digitChar);
+  cycleDigitMark(digitEl);
 });
+
 historyEl?.addEventListener("keydown", (e) => {
   const target = e.target;
   if(!target?.classList?.contains("histDigit")) return;
   if(e.key === "Enter" || e.key === " "){
     e.preventDefault();
-    const digitChar = target.dataset.digit;
-    if(digitChar) cycleGlobalDigit(digitChar);
+    cycleDigitMark(target);
   }
 });
+
 
 /* ---- Dev unlock ---- */
 function clearDevPassword(){ if(devPw) devPw.value = ""; }
